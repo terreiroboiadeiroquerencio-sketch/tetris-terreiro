@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tetris Temático do Terreiro</title>
+    <title>Tetris T. Boiadeiro Querêncio da Mata</title>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
         body {
@@ -101,28 +101,71 @@
             background: #10b981;
             color: #0b131f;
             border: none;
-            padding: 10px;
+            padding: 12px;
             font-weight: bold;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             width: 100%;
             margin-top: 10px;
             text-transform: uppercase;
         }
 
-        /* Tela de Game Over / Início */
+        /* Grade de Seleção de Entidades com Fotos */
+        .entity-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+            width: 100%;
+            margin: 8px 0;
+            max-height: 220px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .entity-option {
+            background: #1f2937;
+            border: 2px solid #374151;
+            border-radius: 8px;
+            padding: 6px;
+            text-align: center;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.7s;
+        }
+        .entity-option img {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #d4af37;
+            flex-shrink: 0;
+        }
+        .entity-option span {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #f3f4f6;
+            text-align: left;
+            line-height: 1.1;
+        }
+        .entity-option:hover, .entity-option.selected {
+            border-color: #d4af37;
+            background: #2b374a;
+        }
+
+        /* Tela Sobreposta */
         .overlay-screen {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(8, 13, 26, 0.95);
+            background: rgba(8, 13, 26, 0.96);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 10;
             text-align: center;
-            padding: 20px;
+            padding: 16px;
             border-radius: 12px;
         }
         .hidden { display: none !important; }
@@ -133,29 +176,33 @@
     <div class="header-container">
         <img src="https://i.ibb.co/60wpJ3xG/Logo-terreiro.jpg" class="header-logo" alt="Logo">
         <div>
-            <h1>Tetris com Imagens</h1>
-            <p class="subtitle">Boiadeiro Querêncio & Caboclo 7 Flechas</p>
-        </div>
+            <h1>Tetris T. Boiadeiro Querêncio da Mata</h1>
+                    </div>
     </div>
 
     <div class="game-panel" style="position: relative;">
         
-        <!-- TELA DE INÍCIO / GAME OVER -->
+        <!-- TELA DE SELEÇÃO DE ENTIDADE -->
         <div id="startScreen" class="overlay-screen">
-            <h2 style="color: #d4af37; margin-top: 0;">Tetris T. Boiadeiro Querêncio</h2>
-            <p style="font-size: 0.85rem; color: #9ca3af; margin-bottom: 20px;">Carregando elementos visuais do terreiro...</p>
-            <button class="btn-start" onclick="initGame()">Iniciar Jogo</button>
+            <h2 style="color: #d4af37; margin-top: 0; font-size: 1rem;">Escolha sua Linha e comece a jogar</h2>
+                        
+            <div class="entity-grid" id="entityGrid">
+                <!-- Inserido dinamicamente pelo JavaScript -->
+            </div>
+
+            <button class="btn-start" onclick="initGame()">Iniciar</button>
         </div>
 
+        <!-- TELA DE GAME OVER -->
         <div id="gameOverScreen" class="overlay-screen hidden">
-            <h2 style="color: #ef4444; margin-top: 0;">Ciclo Encerrado</h2>
+            <h2 style="color: #ef4444; margin-top: 0;">Game over</h2>
             <p id="finalScoreText" style="font-size: 0.9rem; margin-bottom: 15px;"></p>
-            <button class="btn-start" onclick="initGame()">Jogar Novamente</button>
+            <button class="btn-start" onclick="resetToMenu()">Escolher outra Linha</button>
         </div>
 
         <div class="stats-bar">
-            <span>Pontos: <strong id="score" style="color:#fff;">0</strong></span>
-            <span>Nível: <strong id="level" style="color:#10b981;">1</strong></span>
+            <span>Guia: <strong id="currentEntityName" style="color:#10b981;">Boiadeira</strong></span>
+            <span>Pts: <strong id="score" style="color:#fff;">0</strong></span>
         </div>
 
         <!-- O Tabuleiro do Tetris -->
@@ -171,6 +218,53 @@
     </div>
 
     <script>
+        // Suas 23 fotos oficiais do ImgBB
+        const entitiesList = [
+            { name: "Boiadeira", img: "https://i.ibb.co/HfY97m1Q/boiadeira.jpg" },
+            { name: "Boiadeiro", img: "https://i.ibb.co/5gLgyczK/boiadeiro.jpg" },
+            { name: "Oriente", img: "https://i.ibb.co/FLgvpKB3/oriente.jpg" },
+            { name: "Preta Velha", img: "https://i.ibb.co/sd9BPvWv/preta-velha.jpg" },
+            { name: "Preto Velho", img: "https://i.ibb.co/k6GfJWrY/preto-velho.jpg" },
+            { name: "Piratas", img: "https://i.ibb.co/fzqdSF1G/pirata.png" },
+            { name: "Marinheiros", img: "https://i.ibb.co/Xxz6w90k/marinheiro.png" },
+            { name: "Malandra", img: "https://i.ibb.co/nMd6MMHZ/malandra.jpg" },
+            { name: "Exu Mirim", img: "https://i.ibb.co/zTRw2nx4/exu-mirim.jpg" },
+            { name: "Pombo Gira", img: "https://i.ibb.co/LXzgCM58/pombo-gira.jpg" },
+            { name: "Exu", img: "https://i.ibb.co/JfqpCFL/exu.jpg" },
+            { name: "Erê Menino", img: "https://i.ibb.co/JjMSgpVS/menino.jpg" },
+            { name: "Erê Menina", img: "https://i.ibb.co/1DK8P50/menina.jpg" },
+            { name: "Cigano", img: "https://i.ibb.co/6RdGXtz2/cigano.png" },
+            { name: "Cigana", img: "https://i.ibb.co/Sw3KpbGY/cigana.jpg" },
+            { name: "Curumim", img: "https://i.ibb.co/XfLKzfQd/curumim.jpg" },
+            { name: "Cabocla", img: "https://i.ibb.co/qYtp3mh7/cabloca.jpg" },
+            { name: "Caboclo", img: "https://i.ibb.co/6RdKhHD0/caboclo.jpg" },
+            { name: "Cangaceira", img: "https://i.ibb.co/dsW4Tqq6/cangaceira.jpg" },
+            { name: "Cangaceiro", img: "https://i.ibb.co/zHPmRYV5/cangaceiro.jpg" },
+            { name: "Baianos", img: "https://i.ibb.co/FbKVVDNH/baianos.jpg" },
+            { name: "Baianas", img: "https://i.ibb.co/whgzzmyQ/baianas.jpg" },
+            { name: "Zé Pilintra", img: "https://i.ibb.co/chHZZYW1/ze-pilintra.jpg" }
+        ];
+
+        let selectedEntityIndex = 0; // Padrão Boiadeira
+
+        function renderEntityGrid() {
+            const grid = document.getElementById('entityGrid');
+            grid.innerHTML = '';
+            entitiesList.forEach((ent, index) => {
+                const div = document.createElement('div');
+                div.className = `entity-option ${index === selectedEntityIndex ? 'selected' : ''}`;
+                div.innerHTML = `<img src="${ent.img}" alt="${ent.name}"><span>${ent.name}</span>`;
+                div.onclick = () => {
+                    document.querySelectorAll('.entity-option').forEach(el => el.classList.remove('selected'));
+                    div.classList.add('selected');
+                    selectedEntityIndex = index;
+                };
+                grid.appendChild(div);
+            });
+        }
+
+        window.onload = renderEntityGrid;
+
         const canvas = document.getElementById('tetris');
         const context = canvas.getContext('2d');
         context.scale(20, 20);
@@ -185,37 +279,22 @@
         };
 
         let dropCounter = 0;
-        let dropInterval = 400; // Velocidade ideal de 0.4s
+        let dropInterval = 400; 
         let lastTime = 0;
         let gameActive = false;
 
-        // URLs PERSONALIZADAS PARA CADA PEÇA COM SUAS FOTOS DO IMGBB
-        const imageUrls = [
+        const colors = [
             null,
-            'https://i.ibb.co/60wpJ3xG/Logo-terreiro.jpg', // Peça 1: Logo Terreiro
-            'https://i.ibb.co/LhbR7v9/caboclo.png',         // Peça 2: Caboclo
-            'https://i.ibb.co/8Y4yqPz/exu.png',             // Peça 3: Exu
-            'https://i.ibb.co/3zdJz7T/iemanja.png',         // Peça 4: Iemanjá
-            'https://i.ibb.co/v4KjHzp/pretosvelhos.png',    // Peça 5: Pretos Velhos
-            'https://i.ibb.co/GvxYxK0/baianos.png',         // Peça 6: Baianos
-            'https://i.ibb.co/ScdLgT2/eres.png'             // Peça 7: Erês
+            '#d4af37', // 1: Ouro
+            '#10b981', // 2: Verde
+            '#ef4444', // 3: Vermelho
+            '#3b82f6', // 4: Azul
+            '#a855f7', // 5: Roxo
+            '#f59e0b', // 6: Laranja
+            '#ec4899'  // 7: Rosa
         ];
 
-        // Cores de fundo reserva caso a imagem demore 1 segundo para carregar
-        const backupColors = [
-            null, '#d4af37', '#10b981', '#ef4444', '#3b82f6', '#a855f7', '#f59e0b', '#ec4899'
-        ];
-
-        // Pré-carrega as imagens em memória
-        const loadedImages = [];
-        imageUrls.forEach((url, index) => {
-            if (url) {
-                const img = new Image();
-                img.crossOrigin = "anonymous";
-                img.src = url;
-                loadedImages[index] = img;
-            }
-        });
+        const symbols = ['', '➰', '🌿', '🔱', '🌊', '⚔️', '🥥', '🍬'];
 
         function createMatrix(w, h) {
             const matrix = [];
@@ -226,40 +305,31 @@
         }
 
         function createPiece(type) {
-            if (type === 'T') {
-                return [[0, 1, 0], [1, 1, 1], [0, 0, 0]];
-            } else if (type === 'O') {
-                return [[2, 2], [2, 2]];
-            } else if (type === 'L') {
-                return [[0, 0, 3], [3, 3, 3], [0, 0, 0]];
-            } else if (type === 'J') {
-                return [[4, 0, 0], [4, 4, 4], [0, 0, 0]];
-            } else if (type === 'I') {
-                return [[0, 5, 0, 0], [0, 5, 0, 0], [0, 5, 0, 0], [0, 5, 0, 0]];
-            } else if (type === 'S') {
-                return [[0, 6, 6], [6, 6, 0], [0, 0, 0]];
-            } else if (type === 'Z') {
-                return [[7, 7, 0], [0, 7, 7], [0, 0, 0]];
-            }
+            if (type === 'T') return [[0, 1, 0], [1, 1, 1], [0, 0, 0]];
+            else if (type === 'O') return [[2, 2], [2, 2]];
+            else if (type === 'L') return [[0, 0, 3], [3, 3, 3], [0, 0, 0]];
+            else if (type === 'J') return [[4, 0, 0], [4, 4, 4], [0, 0, 0]];
+            else if (type === 'I') return [[0, 5, 0, 0], [0, 5, 0, 0], [0, 5, 0, 0], [0, 5, 0, 0]];
+            else if (type === 'S') return [[0, 6, 6], [6, 6, 0], [0, 0, 0]];
+            else if (type === 'Z') return [[7, 7, 0], [0, 7, 7], [0, 0, 0]];
         }
 
         function drawMatrix(matrix, offset) {
             matrix.forEach((row, y) => {
                 row.forEach((value, x) => {
                     if (value !== 0) {
-                        const img = loadedImages[value];
-                        // Desenha a imagem correspondente da peça
-                        if (img && img.complete && img.naturalWidth !== 0) {
-                            context.drawImage(img, x + offset.x, y + offset.y, 1, 1);
-                        } else {
-                            context.fillStyle = backupColors[value];
-                            context.fillRect(x + offset.x, y + offset.y, 1, 1);
-                        }
+                        context.fillStyle = colors[value];
+                        context.fillRect(x + offset.x, y + offset.y, 1, 1);
                         
-                        // Borda escura para dar destaque em cada quadradinho
                         context.strokeStyle = '#080d1a';
-                        context.lineWidth = 0.08;
+                        context.lineWidth = 0.05;
                         context.strokeRect(x + offset.x, y + offset.y, 1, 1);
+
+                        context.fillStyle = '#ffffff';
+                        context.font = '0.6px Segoe UI Emoji, Apple Color Emoji, sans-serif';
+                        context.textAlign = 'center';
+                        context.textBaseline = 'middle';
+                        context.fillText(symbols[value], x + offset.x + 0.5, y + offset.y + 0.55);
                     }
                 });
             });
@@ -268,7 +338,6 @@
         function draw() {
             context.fillStyle = '#050811';
             context.fillRect(0, 0, canvas.width, canvas.height);
-
             drawMatrix(arena, {x: 0, y: 0});
             drawMatrix(player.matrix, player.pos);
         }
@@ -287,9 +356,7 @@
             let rowCount = 1;
             outer: for (let y = arena.length - 1; y > 0; --y) {
                 for (let x = 0; x < arena[y].length; ++x) {
-                    if (arena[y][x] === 0) {
-                        continue outer;
-                    }
+                    if (arena[y][x] === 0) continue outer;
                 }
                 const row = arena.splice(y, 1)[0].fill(0);
                 arena.unshift(row);
@@ -309,10 +376,7 @@
             const o = player.pos;
             for (let y = 0; y < m.length; ++y) {
                 for (let x = 0; x < m[y].length; ++x) {
-                    if (m[y][x] !== 0 &&
-                       (arena[y + o.y] && arena[y + o.y][x + o.x]) !== 0) {
-                        return true;
-                    }
+                    if (m[y][x] !== 0 && (arena[y + o.y] && arena[y + o.y][x + o.x]) !== 0) return true;
                 }
             }
             return false;
@@ -344,9 +408,7 @@
         function move(dir) {
             if (!gameActive) return;
             player.pos.x += dir;
-            if (collide(arena, player)) {
-                player.pos.x -= dir;
-            }
+            if (collide(arena, player)) player.pos.x -= dir;
         }
 
         function playerReset() {
@@ -357,7 +419,7 @@
             
             if (collide(arena, player)) {
                 gameActive = false;
-                document.getElementById('finalScoreText').innerHTML = `Você fez <strong>${player.score}</strong> pontos!`;
+                document.getElementById('finalScoreText').innerHTML = `Com a linha de <strong>${entitiesList[selectedEntityIndex].name}</strong>, você fez <strong>${player.score}</strong> pontos!`;
                 document.getElementById('gameOverScreen').classList.remove('hidden');
             }
         }
@@ -368,11 +430,8 @@
                     [matrix[x][y], matrix[y][x]] = [matrix[y][x], matrix[x][y]];
                 }
             }
-            if (dir > 0) {
-                matrix.forEach(row => row.reverse());
-            } else {
-                matrix.reverse();
-            }
+            if (dir > 0) matrix.forEach(row => row.reverse());
+            else matrix.reverse();
         }
 
         function rotate() {
@@ -396,16 +455,13 @@
             const deltaTime = time - lastTime;
             lastTime = time;
             dropCounter += deltaTime;
-            if (dropCounter > dropInterval) {
-                playerDrop();
-            }
+            if (dropCounter > dropInterval) playerDrop();
             draw();
             requestAnimationFrame(update);
         }
 
         function updateScore() {
             document.getElementById('score').innerText = player.score;
-            document.getElementById('level').innerText = player.level;
         }
 
         function initGame() {
@@ -413,6 +469,7 @@
             player.score = 0;
             player.level = 1;
             dropInterval = 400;
+            document.getElementById('currentEntityName').innerText = entitiesList[selectedEntityIndex].name;
             updateScore();
             document.getElementById('startScreen').classList.add('hidden');
             document.getElementById('gameOverScreen').classList.add('hidden');
@@ -420,6 +477,12 @@
             playerReset();
             lastTime = performance.now();
             update();
+        }
+
+        function resetToMenu() {
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+            renderEntityGrid();
         }
     </script>
 </body>
